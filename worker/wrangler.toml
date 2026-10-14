@@ -1,1 +1,7 @@
 
+name = "ghazi-ai-api"
+main = "src/index.js"
+compatibility_date = "2026-10-14"
+
+[vars]
+ALLOWED_ORIGIN = "https://iabbasghazi.github.io"
