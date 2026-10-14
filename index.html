@@ -1,1 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#212121">
+  <meta name="description" content="Ghazi AI — a helpful AI assistant.">
+  <title>Ghazi AI</title>
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/m2PRngnY/logo512-png.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #212121;
+      --sidebar: #171717;
+      --panel: #2f2f2f;
+      --panel-hover: #383838;
+      --border: #424242;
+      --text: #ececec;
+      --muted: #a5a5a5;
+      --accent: #a78bfa;
+      --accent-strong: #8b5cf6;
+      --user-bubble: #303030;
+      --danger: #fca5a5;
+      --sidebar-width: 260px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      overflow: hidden;
+    }
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .app { display: flex; width: 100%; height: 100dvh; }
+    .sidebar {
+      width: var(--sidebar-width); flex: 0 0 var(--sidebar-width);
+      background: var(--sidebar); display: flex; flex-direction: column;
+      padding: 12px; border-right: 1px solid rgba(255,255,255,.035);
+      transition: transform .22s ease; z-index: 20;
+    }
+    .side-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; letter-spacing: -.45px; }
+    .brand img { width: 30px; height: 30px; border-radius: 9px; object-fit: cover; }
+    .icon-btn {
+      border: 0; background: transparent; color: var(--muted); border-radius: 9px;
+      width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .15s, color .15s; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #2c2c2c; color: var(--text); }
+    .new-chat {
+      width: 100%; display: flex; gap: 10px; align-items: center; text-align: left;
+      padding: 11px 12px; border: 1px solid #3a3a3a; background: transparent;
+      border-radius: 11px; cursor: pointer; color: var(--text); font-weight: 500;
+    }
+    .new-chat:hover { background: #242424; }
+    .side-section { margin-top: 24px; min-height: 0; display: flex; flex-direction: column; flex: 1; }
+    .side-label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: .9px; font-weight: 700; padding: 0 10px 9px; }
+    .history { overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+    .history-item {
+      width: 100%; border: 0; background: transparent; color: #d8d8d8; border-radius: 8px;
+      padding: 10px; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-item:hover, .history-item.active { background: #292929; }
+    .side-bottom { padding-top: 12px; border-top: 1px solid #303030; }
+    .profile { display: flex; align-items: center; gap: 10px; padding: 10px 7px 4px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#a78bfa,#6d28d9); color: white; display: grid; place-items: center; font-weight: 700; }
+    .profile-name { font-size: 13px; font-weight: 600; }
+    .profile-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .main { min-width: 0; flex: 1; display: flex; flex-direction: column; position: relative; }
+    .topbar { height: 58px; flex: 0 0 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; gap: 12px; }
+    .top-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mobile-menu { display: none; }
+    .model-select { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 9px; background: transparent; border: 0; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .model-select:hover { background: #2a2a2a; }
+    .model-pill { color: #b9a2ff; font-size: 10px; border: 1px solid #57458c; border-radius: 5px; padding: 2px 5px; letter-spacing: .4px; }
+    .top-actions { display: flex; align-items: center; gap: 4px; }
+    .status-dot { width: 7px; height: 7px; background: #6ee7a0; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-text { color: var(--muted); font-size: 12px; }
+    .chat-scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+    .conversation { width: min(790px, 100%); margin: 0 auto; padding: 26px 24px 36px; }
+    .welcome { min-height: calc(100dvh - 225px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 25px 0 10px; }
+    .welcome-logo { width: 58px; height: 58px; object-fit: cover; border-radius: 18px; box-shadow: 0 8px 35px #0005; margin-bottom: 20px; }
+    .welcome h1 { font-size: clamp(27px, 4vw, 34px); letter-spacing: -1.1px; margin: 0 0 9px; font-weight: 600; }
+    .welcome p { color: #aaa; margin: 0; font-size: 15px; }
+    .suggestions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; width: min(560px,100%); margin-top: 32px; }
+    .suggestion {
+      text-align: left; border: 1px solid #424242; background: transparent; border-radius: 14px;
+      padding: 13px 15px; min-height: 65px; cursor: pointer; transition: background .15s,border-color .15s;
+    }
+    .suggestion:hover { background: #2b2b2b; border-color: #626262; }
+    .suggestion strong { display: block; font-size: 13px; margin-bottom: 5px; font-weight: 600; }
+    .suggestion span { display: block; color: #9d9d9d; font-size: 12px; line-height: 1.4; }
+    .message-row { display: flex; width: 100%; margin: 0 0 25px; gap: 12px; align-items: flex-start; }
+    .message-row.user-row { justify-content: flex-end; }
+    .message-content { max-width: calc(100% - 44px); min-width: 0; line-height: 1.75; font-size: 14.5px; overflow-wrap: anywhere; }
+    .user-bubble { background: var(--user-bubble); padding: 10px 16px; border-radius: 21px; max-width: min(82%,560px); white-space: pre-wrap; line-height: 1.65; }
+    .assistant-avatar { width: 29px; height: 29px; flex: 0 0 29px; border-radius: 9px; object-fit: cover; margin-top: 1px; }
+    .assistant-text { padding-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message-tools { display: flex; gap: 2px; margin-top: 7px; opacity: .75; }
+    .message-tools .icon-btn { width: 30px; height: 30px; }
+    .typing { display: inline-flex; gap: 4px; align-items: center; height: 24px; }
+    .typing span { width: 5px; height: 5px; border-radius: 50%; background: #aaa; animation: bounce 1s infinite ease-in-out; }
+    .typing span:nth-child(2) { animation-delay: .15s; }
+    .typing span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity:.45 } 30% { transform: translateY(-5px); opacity:1 } }
+    .composer-area { padding: 8px 20px 12px; flex: 0 0 auto; }
+    .composer-wrap { width: min(790px,100%); margin: 0 auto; }
+    .composer {
+      border: 1px solid #4a4a4a; background: #303030; border-radius: 25px; padding: 10px 11px 9px 17px;
+      box-shadow: 0 7px 25px #0001; display: flex; align-items: flex-end; gap: 10px;
+    }
+    .composer:focus-within { border-color: #656565; }
+    #prompt { width: 100%; min-height: 30px; max-height: 180px; resize: none; border: 0; outline: 0; background: transparent; color: var(--text); padding: 6px 0; line-height: 1.5; font-size: 14px; }
+    #prompt::placeholder { color: #aaa; }
+    .composer-actions { display: flex; align-items: center; gap: 5px; padding-bottom: 1px; }
+    .send-btn { border: 0; width: 35px; height: 35px; border-radius: 50%; background: #f2f2f2; color: #1b1b1b; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+    .send-btn:hover { background: white; transform: translateY(-1px); }
+    .send-btn:disabled { background: #777; color: #333; cursor: not-allowed; transform: none; }
+    .composer-note { text-align: center; color: #8f8f8f; font-size: 11px; padding-top: 9px; }
+    .toast { position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); background: #3b3b3b; color: white; border: 1px solid #555; padding: 10px 14px; border-radius: 10px; box-shadow: 0 8px 30px #0005; z-index: 50; max-width: calc(100% - 30px); }
+    .overlay { display: none; }
+    .error-text { color: var(--danger); }
+    @media (max-width: 720px) {
+      .sidebar { position: fixed; inset: 0 auto 0 0; transform: translateX(-105%); width: min(290px,85vw); box-shadow: 15px 0 50px #0006; }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.show { display: block; position: fixed; inset: 0; background: #0008; z-index: 15; }
+      .mobile-menu { display: inline-flex; }
+      .topbar { padding: 0 10px; }
+      .status-text { display: none; }
+      .conversation { padding: 16px 15px 28px; }
+      .welcome { min-height: calc(100dvh - 205px); }
+      .suggestions { grid-template-columns: 1fr; margin-top: 24px; gap: 8px; }
+      .suggestion { min-height: 55px; padding: 11px 13px; }
+      .composer-area { padding: 7px 10px 10px; }
+      .composer { padding-left: 14px; }
+      .user-bubble { max-width: 90%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Chat history">
+      <div class="side-top">
+        <div class="brand"><img src="https://i.postimg.cc/m2PRngnY/logo512-png.png" alt=""><span>Ghazi AI</span></div>
+        <button class="icon-btn" id="collapseBtn" aria-label="Close sidebar" title="Close sidebar">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M14 9l-3 3 3 3"/></svg>
+        </button>
+      </div>
+      <button class="new-chat" id="newChat">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New chat</span>
+      </button>
+      <div class="side-section">
+        <div class="side-label">Recent</div>
+        <div class="history" id="history"></div>
+      </div>
+      <div class="side-bottom">
+        <div class="profile">
+          <div class="avatar">G</div>
+          <div><div class="profile-name">Ghazi AI</div><div class="profile-sub">Gemini-powered assistant</div></div>
+        </div>
+      </div>
+    </aside>
+    <div class="overlay" id="overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open menu" title="Open menu">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <button class="model-select" id="modelInfo" title="Model information">Ghazi AI <span class="model-pill">BETA</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 10 5 5 5-5"/></svg>
+          </button>
+        </div>
+        <div class="top-actions">
+          <span class="status-text"><span class="status-dot"></span><span id="connectionLabel">Ready to chat</span></span>
+          <button class="icon-btn" id="clearBtn" title="Start a new chat" aria-label="Start a new chat">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 3v5h5M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 21v-5h-5"/></svg>
+          </button>
+        </div>
+      </header>
 
+      <section class="chat-scroll" id="chatScroll">
+        <div class="conversation" id="conversation">
+          <div class="welcome" id="welcome">
+            <img class="welcome-logo" src="https://i.postimg.cc/m2PRngnY/logo512-png.png" alt="Ghazi AI">
+            <h1>What can I help with?</h1>
+            <p>Ask anything. Let's figure it out together.</p>
+            <div class="suggestions">
+              <button class="suggestion" data-prompt="Explain a difficult topic in simple words."><strong>Learn something</strong><span>Break down a complex topic simply</span></button>
+              <button class="suggestion" data-prompt="Help me make a focused study plan for this week."><strong>Plan my week</strong><span>Create a practical study plan</span></button>
+              <button class="suggestion" data-prompt="Help me debug or write code. Ask me what I am building."><strong>Write or debug code</strong><span>Build, fix, and understand code</span></button>
+              <button class="suggestion" data-prompt="Give me five creative ideas for a project."><strong>Explore ideas</strong><span>Brainstorm something new</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="composer-area">
+        <div class="composer-wrap">
+          <form class="composer" id="chatForm">
+            <textarea id="prompt" rows="1" maxlength="8000" placeholder="Message Ghazi AI" aria-label="Message Ghazi AI"></textarea>
+            <div class="composer-actions">
+              <button class="send-btn" id="sendBtn" type="submit" aria-label="Send message" title="Send message">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+              </button>
+            </div>
+          </form>
+          <div class="composer-note">Ghazi AI can make mistakes. Verify important information.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast" hidden></div>
+
+  <script>
+    (() => {
+      "use strict";
+      const $ = (selector) => document.querySelector(selector);
+      const conversation = $("#conversation");
+      const scroll = $("#chatScroll");
+      const prompt = $("#prompt");
+      const sendBtn = $("#sendBtn");
+      const form = $("#chatForm");
+      const sidebar = $("#sidebar");
+      const overlay = $("#overlay");
+      const historyList = $("#history");
+      const toast = $("#toast");
+      const connectionLabel = $("#connectionLabel");
+
+      let busy = false;
+      let activeChatId = null;
+      let chats = [];
+      let currentHistory = [];
+
+      function newId() {
+        return "chat-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.hidden = false;
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => { toast.hidden = true; }, 3200);
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+      }
+
+      function openSidebar() {
+        sidebar.classList.add("open");
+        overlay.classList.add("show");
+      }
+
+      function scrollBottom() {
+        requestAnimationFrame(() => { scroll.scrollTop = scroll.scrollHeight; });
+      }
+
+      function clearWelcome() {
+        const welcome = $("#welcome");
+        if (welcome) welcome.remove();
+      }
+
+      function makeIconButton(label, svg, onClick) {
+        const button = document.createElement("button");
+        button.className = "icon-btn";
+        button.type = "button";
+        button.title = label;
+        button.setAttribute("aria-label", label);
+        button.innerHTML = svg;
+        button.addEventListener("click", onClick);
+        return button;
+      }
+
+      const copySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
+      const retrySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 3v5h5M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 21v-5h-5"/></svg>';
+
+      function addUserMessage(text) {
+        clearWelcome();
+        const row = document.createElement("div");
+        row.className = "message-row user-row";
+        const bubble = document.createElement("div");
+        bubble.className = "user-bubble";
+        bubble.textContent = text;
+        row.appendChild(bubble);
+        conversation.appendChild(row);
+        scrollBottom();
+      }
+
+      function addAssistantMessage(text, options = {}) {
+        clearWelcome();
+        const row = document.createElement("div");
+        row.className = "message-row";
+        const avatar = document.createElement("img");
+        avatar.className = "assistant-avatar";
+        avatar.src = "https://i.postimg.cc/m2PRngnY/logo512-png.png";
+        avatar.alt = "Ghazi AI";
+        const body = document.createElement("div");
+        body.className = "message-content";
+        const content = document.createElement("div");
+        content.className = "assistant-text";
+        content.textContent = text;
+        body.appendChild(content);
+        if (!options.pending) {
+          const tools = document.createElement("div");
+          tools.className = "message-tools";
+          tools.appendChild(makeIconButton("Copy response", copySvg, async () => {
+            try { await navigator.clipboard.writeText(content.textContent); showToast("Response copied"); }
+            catch { showToast("Could not copy automatically"); }
+          }));
+          tools.appendChild(makeIconButton("Try again", retrySvg, () => {
+            if (options.retryText) sendMessage(options.retryText, true);
+          }));
+          body.appendChild(tools);
+        }
+        row.append(avatar, body);
+        conversation.appendChild(row);
+        scrollBottom();
+        return { row, content };
+      }
+
+      function renderHistory() {
+        historyList.replaceChildren();
+        if (!chats.length) {
+          const empty = document.createElement("div");
+          empty.style.cssText = "color:#777;font-size:12px;padding:10px";
+          empty.textContent = "Your recent chats will appear here";
+          historyList.appendChild(empty);
+          return;
+        }
+        [...chats].reverse().forEach(chat => {
+          const button = document.createElement("button");
+          button.className = "history-item" + (chat.id === activeChatId ? " active" : "");
+          button.textContent = chat.title || "New chat";
+          button.title = chat.title || "New chat";
+          button.addEventListener("click", () => loadChat(chat.id));
+          historyList.appendChild(button);
+        });
+      }
+
+      function saveCurrentChat() {
+        if (!activeChatId || !currentHistory.length) return;
+        const existing = chats.find(c => c.id === activeChatId);
+        const firstUser = currentHistory.find(m => m.role === "user");
+        const chat = {
+          id: activeChatId,
+          title: firstUser ? firstUser.text.slice(0, 42) : "New chat",
+          history: currentHistory.slice(-24),
+          updated: Date.now()
+        };
+        if (existing) Object.assign(existing, chat);
+        else chats.push(chat);
+        chats.sort((a,b) => a.updated - b.updated);
+        chats = chats.slice(-30);
+        renderHistory();
+      }
+
+      function loadChat(id) {
+        const chat = chats.find(c => c.id === id);
+        if (!chat) return;
+        activeChatId = id;
+        currentHistory = [...chat.history];
+        conversation.replaceChildren();
+        currentHistory.forEach(item => {
+          if (item.role === "user") addUserMessage(item.text);
+          else addAssistantMessage(item.text, { retryText: "" });
+        });
+        renderHistory();
+        closeSidebar();
+      }
+
+      function startNewChat() {
+        activeChatId = null;
+        currentHistory = [];
+        conversation.replaceChildren();
+        const welcome = document.createElement("div");
+        welcome.className = "welcome";
+        welcome.id = "welcome";
+        welcome.innerHTML = `
+          <img class="welcome-logo" src="https://i.postimg.cc/m2PRngnY/logo512-png.png" alt="Ghazi AI">
+          <h1>What can I help with?</h1>
+          <p>Ask anything. Let's figure it out together.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="Explain a difficult topic in simple words."><strong>Learn something</strong><span>Break down a complex topic simply</span></button>
+            <button class="suggestion" data-prompt="Help me make a focused study plan for this week."><strong>Plan my week</strong><span>Create a practical study plan</span></button>
+            <button class="suggestion" data-prompt="Help me debug or write code. Ask me what I am building."><strong>Write or debug code</strong><span>Build, fix, and understand code</span></button>
+            <button class="suggestion" data-prompt="Give me five creative ideas for a project."><strong>Explore ideas</strong><span>Brainstorm something new</span></button>
+          </div>`;
+        conversation.appendChild(welcome);
+        bindSuggestions();
+        renderHistory();
+        closeSidebar();
+        prompt.focus();
+      }
+
+      function bindSuggestions() {
+        document.querySelectorAll("[data-prompt]").forEach(button => {
+          if (button.dataset.bound) return;
+          button.dataset.bound = "1";
+          button.addEventListener("click", () => sendMessage(button.dataset.prompt));
+        });
+      }
+
+      async function sendMessage(rawText, isRetry = false) {
+        const message = String(rawText || "").trim();
+        if (!message || busy) return;
+        const config = window.GHAZI_CONFIG;
+        const apiUrl = config && config.apiUrl;
+        if (!apiUrl || !/^https:\/\/.+/i.test(apiUrl)) {
+          showToast("Setup needed: set your Cloudflare Worker URL in config.js");
+          return;
+        }
+
+        if (!isRetry) {
+          if (!activeChatId) activeChatId = newId();
+          addUserMessage(message);
+          currentHistory.push({ role: "user", text: message });
+          prompt.value = "";
+          prompt.style.height = "auto";
+        }
+        busy = true;
+        sendBtn.disabled = true;
+        connectionLabel.textContent = "Thinking…";
+        const pending = addAssistantMessage("", { pending: true });
+        pending.content.innerHTML = '<span class="typing" aria-label="Ghazi AI is thinking"><span></span><span></span><span></span></span>';
+
+        try {
+          const priorHistory = currentHistory.slice(0, -1).slice(-12);
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, history: priorHistory })
+          });
+          let data;
+          try { data = await response.json(); }
+          catch { throw new Error("Worker returned an invalid response. Check your backend deployment."); }
+
+          if (!response.ok) {
+            throw new Error(data && data.error ? data.error : `Request failed (${response.status})`);
+          }
+          if (!data || typeof data.reply !== "string" || !data.reply.trim()) {
+            throw new Error("AI returned an empty reply.");
+          }
+
+          pending.content.textContent = data.reply;
+          const tools = document.createElement("div");
+          tools.className = "message-tools";
+          tools.appendChild(makeIconButton("Copy response", copySvg, async () => {
+            try { await navigator.clipboard.writeText(data.reply); showToast("Response copied"); }
+            catch { showToast("Could not copy automatically"); }
+          }));
+          tools.appendChild(makeIconButton("Try again", retrySvg, () => sendMessage(message, true)));
+          pending.content.parentElement.appendChild(tools);
+          currentHistory.push({ role: "model", text: data.reply });
+          currentHistory = currentHistory.slice(-24);
+          saveCurrentChat();
+          connectionLabel.textContent = "Ready to chat";
+        } catch (error) {
+          pending.content.textContent = "I couldn't get a response this time. " + (error.message || "Please try again.");
+          pending.content.classList.add("error-text");
+          connectionLabel.textContent = "Connection issue";
+          showToast(error.message || "Could not connect to Ghazi AI");
+        } finally {
+          busy = false;
+          sendBtn.disabled = false;
+          prompt.focus();
+          scrollBottom();
+        }
+      }
+
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        sendMessage(prompt.value);
+      });
+      prompt.addEventListener("input", () => {
+        prompt.style.height = "auto";
+        prompt.style.height = Math.min(prompt.scrollHeight, 180) + "px";
+      });
+      prompt.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+      $("#newChat").addEventListener("click", startNewChat);
+      $("#clearBtn").addEventListener("click", startNewChat);
+      $("#collapseBtn").addEventListener("click", closeSidebar);
+      $("#menuBtn").addEventListener("click", openSidebar);
+      overlay.addEventListener("click", closeSidebar);
+      $("#modelInfo").addEventListener("click", () => showToast("Ghazi AI uses the Gemini API through your secure Cloudflare Worker."));
+      bindSuggestions();
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
