@@ -9,5 +9,5 @@
  */
 
 window.GHAZI_CONFIG = {
-  apiUrl: "https://ghazi-ai-api.gaziabbasga18-5a7.workers.dev/"
+  apiUrl: "https://ghazi-ai-api.gaziabbasga18-5a7.workers.dev"
 };
